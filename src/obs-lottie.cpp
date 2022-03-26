@@ -26,9 +26,9 @@ struct lottie_source {
 };
 
 
-static const char *lottie_source_get_name(void *unused)
+static const char *lottie_source_get_name(void *data)
 {
-	UNUSED_PARAMETER(unused);
+	UNUSED_PARAMETER(data);
 
 	return obs_module_text("Lottie");
 }
@@ -41,7 +41,8 @@ static const char *lottie_filter =
 
 static obs_properties_t *lottie_source_properties(void *data)
 {
-	lottie_source *ctx = (lottie_source*) data;
+	UNUSED_PARAMETER(data);
+
 	obs_properties_t *properties = obs_properties_create();
 
 	obs_properties_add_path(
@@ -123,7 +124,6 @@ static void lottie_source_update(void *data, obs_data_t *settings)
 
 	ctx->keepAspectRatio = obs_data_get_bool(settings, "keepAspectRatio");
 
-	// TODO?
 	ctx->buffer = std::unique_ptr<uint32_t[]>(new uint32_t[ctx->width * ctx->height * 4]);
 
 	if (!width || !height) {
@@ -165,8 +165,11 @@ static uint32_t lottie_source_getheight(void *data)
 	return ctx->height;
 }
 
+
 static void lottie_source_video_tick(void *data, float seconds)
 {
+	UNUSED_PARAMETER(seconds);
+
 	lottie_source* ctx = (lottie_source*) data;
 
 	if (!ctx->animation) {
@@ -187,6 +190,8 @@ static void lottie_source_video_tick(void *data, float seconds)
 
 static void lottie_source_render(void *data, gs_effect_t *effect)
 {
+	UNUSED_PARAMETER(effect);
+
     lottie_source* ctx = (lottie_source*) data;
 
 	if (!ctx->animation) {
@@ -222,7 +227,7 @@ static void lottie_source_render(void *data, gs_effect_t *effect)
 static struct obs_source_info lottie_source_info = {
 	.id = "lottie_source",
 	.type = OBS_SOURCE_TYPE_INPUT,
-	.output_flags = OBS_SOURCE_VIDEO,	// OBS_SOURCE_SRGB
+	.output_flags = OBS_SOURCE_VIDEO,
 	.get_name = lottie_source_get_name,
 	.create = lottie_source_create,
 	.destroy = lottie_source_destroy,
@@ -233,7 +238,6 @@ static struct obs_source_info lottie_source_info = {
 	.update = lottie_source_update,
 	.video_tick = lottie_source_video_tick,
 	.video_render = lottie_source_render,
-	// .missing_files = image_source_missingfiles,
 	.icon_type = OBS_ICON_TYPE_MEDIA,
 };
 
@@ -242,13 +246,5 @@ bool obs_module_load(void)
 {
 	obs_register_source(&lottie_source_info);
 
-	blog(LOG_INFO, "plugin loaded successfully (version %s)", PLUGIN_VERSION);
-
 	return true;
-}
-
-
-void obs_module_unload()
-{
-	blog(LOG_INFO, "plugin unloaded");
 }
