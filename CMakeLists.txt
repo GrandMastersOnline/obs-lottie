@@ -28,7 +28,7 @@ target_include_directories(${CMAKE_PROJECT_NAME}
 
 target_link_libraries(
   ${CMAKE_PROJECT_NAME} PRIVATE OBS::libobs OBS::obs-frontend-api Qt5::Core
-                                Qt5::Widgets)
+                                Qt5::Widgets rlottie::rlottie)
 
 set_target_properties(
   ${CMAKE_PROJECT_NAME}
