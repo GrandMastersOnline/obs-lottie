@@ -3,14 +3,14 @@ name: 'Build on Push and Tag'
 on:
   push:
     paths-ignore: ['**.md']
-    branches: [master]
+    branches: [main]
     tags: ['*']
   pull_request:
     paths-ignore: ['**.md']
-    branches: [master]
+    branches: [main]
 
 env:
-  PLUGIN_NAME: 'obs-plugintemplate'
+  PLUGIN_NAME: 'obs-lottie'
 
 jobs:
   clang_check:
