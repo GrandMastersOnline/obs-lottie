@@ -13,6 +13,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/obs-lottie.cpp)
 
 find_package(libobs REQUIRED)
 find_package(obs-frontend-api REQUIRED)
+find_package(rlottie REQUIRED)
 include(cmake/ObsPluginHelpers.cmake)
 
 configure_file(src/plugin-macros.h.in
