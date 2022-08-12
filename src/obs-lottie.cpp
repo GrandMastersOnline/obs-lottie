@@ -16,7 +16,7 @@ struct lottie_source {
     size_t frame = 0;
     bool keepAspectRatio = true;
 
-    std::unique_ptr<uint32_t[]> buffer;
+    std::vector<uint32_t> buffer;
     std::unique_ptr<rlottie::Animation> animation;
 
     lottie_source(obs_source_t* source):
@@ -124,7 +124,7 @@ static void lottie_source_update(void *data, obs_data_t *settings)
 
     ctx->keepAspectRatio = obs_data_get_bool(settings, "keepAspectRatio");
 
-    ctx->buffer = std::unique_ptr<uint32_t[]>(new uint32_t[ctx->width * ctx->height * 4]);
+    ctx->buffer.resize(ctx->width * ctx->height * 4);
 
     if (!width || !height) {
         obs_source_update_properties(ctx->source);
@@ -177,7 +177,7 @@ static void lottie_source_video_tick(void *data, float seconds)
     }
 
     if (obs_source_showing(ctx->source)) {
-        rlottie::Surface surface(ctx->buffer.get(), ctx->width, ctx->height, ctx->width * 4);
+        rlottie::Surface surface(ctx->buffer.data(), ctx->width, ctx->height, ctx->width * 4);
 
         ctx->animation->renderSync(ctx->frame, surface, ctx->keepAspectRatio);
     }
@@ -199,7 +199,7 @@ static void lottie_source_render(void *data, gs_effect_t *effect)
     }
 
     const uint8_t* buffer[] = {
-        reinterpret_cast<const uint8_t *>(ctx->buffer.get()),
+        reinterpret_cast<const uint8_t *>(ctx->buffer.data()),
     };
 
     gs_texture_t* texture = gs_texture_create(
