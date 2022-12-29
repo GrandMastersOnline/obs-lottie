@@ -7,12 +7,20 @@ set(PLUGIN_AUTHOR "Tomasz Żyźniewski")
 set(MACOS_BUNDLEID "online.grandmasters.${CMAKE_PROJECT_NAME}")
 set(LINUX_MAINTAINER_EMAIL "tomasz.zyzniewski@grandmasters.online")
 
+include(ExternalProject)
+
+ExternalProject_Add(rlottie
+  GIT_REPOSITORY    https://github.com/Samsung/rlottie.git
+  GIT_TAG           master
+  INSTALL_COMMAND   ""
+  TEST_COMMAND      ""
+)
+
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/obs-lottie.cpp)
 
 # /!\ TAKE NOTE: No need to edit things past this point /!\
 
 find_package(libobs REQUIRED)
-find_package(obs-frontend-api REQUIRED)
 find_package(rlottie REQUIRED)
 include(cmake/ObsPluginHelpers.cmake)
 
@@ -27,8 +35,7 @@ target_include_directories(${CMAKE_PROJECT_NAME}
                            PRIVATE ${CMAKE_SOURCE_DIR}/src)
 
 target_link_libraries(
-  ${CMAKE_PROJECT_NAME} PRIVATE OBS::libobs OBS::obs-frontend-api Qt5::Core
-                                Qt5::Widgets rlottie::rlottie)
+  ${CMAKE_PROJECT_NAME} PRIVATE obs rlottie::rlottie)
 
 set_target_properties(
   ${CMAKE_PROJECT_NAME}

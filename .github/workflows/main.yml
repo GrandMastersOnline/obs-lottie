@@ -52,9 +52,6 @@ jobs:
       run:
         shell: zsh {0}
     steps:
-      - name: Install rlottie
-        run: sudo apt-get install -y librlottie-dev
-
       - name: Checkout
         uses: actions/checkout@v3
         with:
@@ -174,9 +171,6 @@ jobs:
       run:
         shell: bash
     steps:
-      - name: Install rlottie
-        run: sudo apt-get install -y librlottie-dev
-
       - name: Checkout
         uses: actions/checkout@v3
         with:
@@ -253,9 +247,6 @@ jobs:
       run:
         shell: pwsh
     steps:
-      - name: Install rlottie
-        run: sudo apt-get install -y librlottie-dev
-
       - name: Checkout
         uses: actions/checkout@v3
         with:
