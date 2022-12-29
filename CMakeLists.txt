@@ -7,20 +7,18 @@ set(PLUGIN_AUTHOR "Tomasz Żyźniewski")
 set(MACOS_BUNDLEID "online.grandmasters.${CMAKE_PROJECT_NAME}")
 set(LINUX_MAINTAINER_EMAIL "tomasz.zyzniewski@grandmasters.online")
 
-include(ExternalProject)
+include(FetchContent)
 
-ExternalProject_Add(rlottie
+FetchContent_Declare(
+  rlottie
   GIT_REPOSITORY    https://github.com/Samsung/rlottie.git
   GIT_TAG           master
-  INSTALL_COMMAND   ""
-  TEST_COMMAND      ""
 )
+FetchContent_MakeAvailable(rlottie)
 
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/obs-lottie.cpp)
 
 # /!\ TAKE NOTE: No need to edit things past this point /!\
-
-set(rlottie_DIR, "${CMAKE_BINARY_DIR}/rlottie-prefix/src/rlottie-build")
 
 find_package(libobs REQUIRED)
 find_package(rlottie REQUIRED)
