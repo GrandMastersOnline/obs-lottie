@@ -174,6 +174,7 @@ if(OS_POSIX)
   target_compile_options(
     ${CMAKE_PROJECT_NAME}
     PRIVATE
+      -std=c++20
       -Werror
       -Wextra
       -Wvla
