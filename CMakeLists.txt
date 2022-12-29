@@ -26,12 +26,7 @@ FetchContent_Declare(
   rlottie
   GIT_REPOSITORY https://github.com/Samsung/rlottie.git
   GIT_TAG master)
-
-FetchContent_GetProperties(rlottie)
-if(NOT rlottie_POPULATED)
-  FetchContent_Populate(rlottie)
-  add_subdirectory(${rlottie_SOURCE_DIR} ${rlottie_BINARY_DIR} EXCLUDE_FROM_ALL)
-endif()
+FetchContent_MakeAvailable(rlottie)
 
 # Import libobs as main plugin dependency
 find_package(libobs REQUIRED)
