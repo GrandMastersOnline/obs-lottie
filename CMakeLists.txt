@@ -33,6 +33,8 @@ if(NOT rlottie_POPULATED)
   add_subdirectory(${rlottie_SOURCE_DIR} ${rlottie_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
+set(CMAKE_CXX_STANDARD 20)
+
 # Add your custom source files here - header files are optional and only
 # required for visibility e.g. in Xcode or Visual Studio
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/obs-lottie.cpp)
