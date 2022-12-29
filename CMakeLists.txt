@@ -20,6 +20,8 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/obs-lottie.cpp)
 
 # /!\ TAKE NOTE: No need to edit things past this point /!\
 
+set(rlottie_DIR, "${CMAKE_BINARY_DIR}/rlottie-prefix/src/rlottie-build")
+
 find_package(libobs REQUIRED)
 find_package(rlottie REQUIRED)
 include(cmake/ObsPluginHelpers.cmake)
