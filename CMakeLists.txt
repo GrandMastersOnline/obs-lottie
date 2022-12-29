@@ -24,9 +24,8 @@ include(FetchContent)
 
 FetchContent_Declare(
   rlottie
-  GIT_REPOSITORY    https://github.com/Samsung/rlottie.git
-  GIT_TAG           master
-)
+  GIT_REPOSITORY https://github.com/Samsung/rlottie.git
+  GIT_TAG master)
 
 FetchContent_GetProperties(rlottie)
 if(NOT rlottie_POPULATED)
