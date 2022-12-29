@@ -39,7 +39,7 @@ build() {
   trap '_trap_error' ZERR
 
   fpath=("${SCRIPT_HOME}/utils.zsh" ${fpath})
-  autoload -Uz log_info log_error log_output set_loglevel check_${host_os} setup_${host_os} setup_obs
+  autoload -Uz log_info log_error log_output set_loglevel check_${host_os} setup_${host_os} setup_obs setup_ccache
 
   local -i _verbosity=1
   local -r _version='0.0.1'
@@ -111,6 +111,7 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
       -v|--verbose) (( _verbosity += 1 )); shift ;;
       -h|--help) log_output ${_usage}; exit 0 ;;
       -V|--version) print -Pr "${_version}"; exit 0 ;;
+      --debug) _verbosity=3; shift ;;
       *) log_error "Unknown option: %B${1}%b"; log_output ${_usage}; exit 2 ;;
     }
   }
@@ -137,6 +138,7 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
       ;;
   }
 
+  setup_ccache
   setup_obs
 
   pushd ${project_root}
@@ -163,7 +165,11 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
         -DCMAKE_FRAMEWORK_PATH="${project_root:h}/obs-build-dependencies/obs-plugin-deps/Frameworks"
       )
       ;;
-    linux-*) ;;
+    linux-*)
+      if (( ${+CI} )) {
+        cmake_args+=(-DCMAKE_INSTALL_PREFIX=/usr)
+      }
+      ;;
   }
 
   cmake -S . -B build_${target} -G Ninja ${cmake_args}
@@ -179,4 +185,4 @@ Usage: %B${functrace[1]%:*}%b <option> [<options>]
   popd
 }
 
-build "${@}"
+build ${@}

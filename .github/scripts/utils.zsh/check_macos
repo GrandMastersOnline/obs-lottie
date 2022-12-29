@@ -15,4 +15,6 @@ if (( ! ${+commands[brew]} )) {
   log_error 'No Homebrew command found. Please install Homebrew (https://brew.sh)'
   return 2
 }
-brew bundle --file "${SCRIPT_HOME}/.Brewfile"
+
+brew bundle --file "${SCRIPT_HOME}/.Brewfile" --no-upgrade
+rehash

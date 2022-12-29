@@ -1,10 +1,22 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.16...3.21)
 
+# Change obs-plugintemplate to your plugin's name in a machine-readable format
+# (e.g.: obs-myawesomeplugin) and set
 project(obs-lottie VERSION 1.0.0)
 add_library(${CMAKE_PROJECT_NAME} MODULE)
 
+# Replace `Your Name Here` with the name (yours or your organization's) you want
+# to see as the author of the plugin (in the plugin's metadata itself and in the
+# installers)
 set(PLUGIN_AUTHOR "Tomasz Żyźniewski")
+
+# Replace `com.example.obs-plugin-template` with a unique Bundle ID for macOS
+# releases (used both in the installer and when submitting the installer for
+# notarization)
 set(MACOS_BUNDLEID "online.grandmasters.${CMAKE_PROJECT_NAME}")
+
+# Replace `me@contoso.com` with the maintainer email address you want to put in
+# Linux packages
 set(LINUX_MAINTAINER_EMAIL "tomasz.zyzniewski@grandmasters.online")
 
 include(FetchContent)
@@ -16,13 +28,17 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(rlottie)
 
+# Add your custom source files here - header files are optional and only
+# required for visibility e.g. in Xcode or Visual Studio
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/obs-lottie.cpp)
 
 # /!\ TAKE NOTE: No need to edit things past this point /!\
 
 find_package(libobs REQUIRED)
 find_package(rlottie REQUIRED)
+find_package(obs-frontend-api REQUIRED)
 include(cmake/ObsPluginHelpers.cmake)
+find_qt(COMPONENTS Widgets Core)
 
 configure_file(src/plugin-macros.h.in
                ${CMAKE_SOURCE_DIR}/src/plugin-macros.generated.h)
@@ -35,7 +51,8 @@ target_include_directories(${CMAKE_PROJECT_NAME}
                            PRIVATE ${CMAKE_SOURCE_DIR}/src)
 
 target_link_libraries(
-  ${CMAKE_PROJECT_NAME} PRIVATE obs rlottie::rlottie)
+  ${CMAKE_PROJECT_NAME} PRIVATE OBS::libobs OBS::obs-frontend-api Qt::Core
+                                Qt::Widgets rlottie::rlottie)
 
 set_target_properties(
   ${CMAKE_PROJECT_NAME}
