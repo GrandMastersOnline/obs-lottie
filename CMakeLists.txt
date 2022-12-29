@@ -26,7 +26,12 @@ FetchContent_Declare(
   GIT_REPOSITORY    https://github.com/Samsung/rlottie.git
   GIT_TAG           master
 )
-FetchContent_MakeAvailable(rlottie)
+
+FetchContent_GetProperties(rlottie)
+if(NOT rlottie_POPULATED)
+  FetchContent_Populate(rlottie)
+  add_subdirectory(${rlottie_SOURCE_DIR} ${rlottie_BINARY_DIR} EXCLUDE_FROM_ALL)
+endif()
 
 # Add your custom source files here - header files are optional and only
 # required for visibility e.g. in Xcode or Visual Studio
