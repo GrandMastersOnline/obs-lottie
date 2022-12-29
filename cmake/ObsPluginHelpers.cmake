@@ -550,7 +550,6 @@ else()
         ${CMAKE_PROJECT_NAME}
         PRIVATE /MP
                 /W3
-                /WX
                 /wd4201
                 /std:c++20
                 "$<$<CONFIG:RELWITHDEBINFO>:/Ob2>"
