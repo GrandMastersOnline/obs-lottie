@@ -552,6 +552,7 @@ else()
                 /W3
                 /WX
                 /wd4201
+                /std:c++20
                 "$<$<CONFIG:RELWITHDEBINFO>:/Ob2>"
                 "$<$<CONFIG:DEBUG>:/DDEBUG=1;/D_DEBUG=1>"
                 /DUNICODE
