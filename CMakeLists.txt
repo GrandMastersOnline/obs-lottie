@@ -22,16 +22,15 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/obs-lottie.cpp)
 
 include(FetchContent)
 
-option(BUILD_SHARED_LIBS "BUILD_SHARED_LIBS" OFF)
-
 FetchContent_Declare(
   rlottie
-  GIT_REPOSITORY https://github.com/Samsung/rlottie.git
+  GIT_REPOSITORY https://github.com/zyzniewski/rlottie.git
   GIT_TAG master)
 
 FetchContent_GetProperties(rlottie)
 if(NOT rlottie_POPULATED)
   FetchContent_Populate(rlottie)
+  set(BUILD_SHARED_LIBS OFF)
   add_subdirectory(${rlottie_SOURCE_DIR} ${rlottie_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
