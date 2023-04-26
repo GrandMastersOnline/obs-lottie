@@ -15,8 +15,10 @@ struct lottie_source {
 	size_t frame = 0;
 	bool keepAspectRatio = true;
 	bool is_looping = false;
+	bool is_clear_on_media_end = true;
 	bool restart_on_activate = true;
 
+	bool active = false;
 	std::vector<uint32_t> buffer;
 	std::unique_ptr<rlottie::Animation> animation;
 
@@ -51,6 +53,9 @@ static obs_properties_t *lottie_source_properties(void *data)
 	obs_properties_add_bool(properties, "looping",
 				obs_module_text("Looping"));
 
+	obs_properties_add_bool(properties, "clear_on_media_end",
+				obs_module_text("ClearOnMediaEnd"));
+
 	obs_properties_add_bool(properties, "restart_on_activate",
 				obs_module_text("RestartWhenActivated"));
 
@@ -63,6 +68,7 @@ static void lottie_source_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "height", 0);
 	obs_data_set_default_bool(settings, "keepAspectRatio", true);
 	obs_data_set_default_bool(settings, "looping", false);
+	obs_data_set_default_bool(settings, "clear_on_media_end", true);
 	obs_data_set_default_bool(settings, "restart_on_activate", true);
 }
 
@@ -112,6 +118,9 @@ static void lottie_source_update(void *data, obs_data_t *settings)
 	ctx->is_looping = obs_data_get_bool(settings, "looping");
 	ctx->restart_on_activate =
 		obs_data_get_bool(settings, "restart_on_activate");
+	ctx->is_clear_on_media_end =
+		obs_data_get_bool(settings, "clear_on_media_end");
+	ctx->active = true;
 }
 
 static void lottie_source_activate(void *data)
@@ -120,6 +129,7 @@ static void lottie_source_activate(void *data)
 
 	if (ctx->restart_on_activate) {
 		ctx->frame = 0;
+		ctx->active = true;
 	}
 }
 
@@ -159,7 +169,7 @@ static void lottie_source_video_tick(void *data, float seconds)
 
 	lottie_source *ctx = (lottie_source *)data;
 
-	if (!ctx->animation) {
+	if (!ctx->animation || !ctx->active) {
 		return;
 	}
 
@@ -174,6 +184,8 @@ static void lottie_source_video_tick(void *data, float seconds)
 	if (ctx->frame == ctx->animation->totalFrame()) {
 		if (ctx->is_looping) {
 			ctx->frame = 0;
+		} else if (ctx->is_clear_on_media_end) {
+			ctx->active = false;
 		}
 	} else {
 		++ctx->frame;
@@ -186,7 +198,7 @@ static void lottie_source_render(void *data, gs_effect_t *effect)
 
 	lottie_source *ctx = (lottie_source *)data;
 
-	if (!ctx->animation) {
+	if (!ctx->animation || !ctx->active) {
 		return;
 	}
 
