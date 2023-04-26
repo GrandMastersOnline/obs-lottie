@@ -15,6 +15,7 @@ struct lottie_source {
 	size_t frame = 0;
 	bool keepAspectRatio = true;
 	bool is_looping = false;
+	bool restart_on_activate = true;
 
 	std::vector<uint32_t> buffer;
 	std::unique_ptr<rlottie::Animation> animation;
@@ -50,6 +51,9 @@ static obs_properties_t *lottie_source_properties(void *data)
 	obs_properties_add_bool(properties, "looping",
 				obs_module_text("Looping"));
 
+	obs_properties_add_bool(properties, "restart_on_activate",
+				obs_module_text("RestartWhenActivated"));
+
 	return properties;
 }
 
@@ -59,6 +63,7 @@ static void lottie_source_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "height", 0);
 	obs_data_set_default_bool(settings, "keepAspectRatio", true);
 	obs_data_set_default_bool(settings, "looping", false);
+	obs_data_set_default_bool(settings, "restart_on_activate", true);
 }
 
 static void lottie_source_update(void *data, obs_data_t *settings)
@@ -105,6 +110,17 @@ static void lottie_source_update(void *data, obs_data_t *settings)
 	}
 
 	ctx->is_looping = obs_data_get_bool(settings, "looping");
+	ctx->restart_on_activate =
+		obs_data_get_bool(settings, "restart_on_activate");
+}
+
+static void lottie_source_activate(void *data)
+{
+	lottie_source *ctx = (lottie_source *)data;
+
+	if (ctx->restart_on_activate) {
+		ctx->frame = 0;
+	}
 }
 
 static void *lottie_source_create(obs_data_t *settings, obs_source_t *source)
@@ -198,6 +214,7 @@ static struct obs_source_info lottie_source_info = {
 	.get_defaults = lottie_source_defaults,
 	.get_properties = lottie_source_properties,
 	.update = lottie_source_update,
+	.activate = lottie_source_activate,
 	.video_tick = lottie_source_video_tick,
 	.video_render = lottie_source_render,
 	.icon_type = OBS_ICON_TYPE_MEDIA,
