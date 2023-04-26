@@ -14,6 +14,7 @@ struct lottie_source {
 	size_t height = 0;
 	size_t frame = 0;
 	bool keepAspectRatio = true;
+	bool is_looping = false;
 
 	std::vector<uint32_t> buffer;
 	std::unique_ptr<rlottie::Animation> animation;
@@ -46,6 +47,9 @@ static obs_properties_t *lottie_source_properties(void *data)
 	obs_properties_add_bool(properties, "keepAspectRatio",
 				obs_module_text("Keep Aspect Ratio"));
 
+	obs_properties_add_bool(properties, "looping",
+				obs_module_text("Looping"));
+
 	return properties;
 }
 
@@ -54,6 +58,7 @@ static void lottie_source_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "width", 0);
 	obs_data_set_default_int(settings, "height", 0);
 	obs_data_set_default_bool(settings, "keepAspectRatio", true);
+	obs_data_set_default_bool(settings, "looping", false);
 }
 
 static void lottie_source_update(void *data, obs_data_t *settings)
@@ -98,6 +103,8 @@ static void lottie_source_update(void *data, obs_data_t *settings)
 	if (!width || !height) {
 		obs_source_update_properties(ctx->source);
 	}
+
+	ctx->is_looping = obs_data_get_bool(settings, "looping");
 }
 
 static void *lottie_source_create(obs_data_t *settings, obs_source_t *source)
@@ -148,8 +155,12 @@ static void lottie_source_video_tick(void *data, float seconds)
 					   ctx->keepAspectRatio);
 	}
 
-	if (++ctx->frame > ctx->animation->totalFrame()) {
-		ctx->frame = 0;
+	if (ctx->frame == ctx->animation->totalFrame()) {
+		if (ctx->is_looping) {
+			ctx->frame = 0;
+		}
+	} else {
+		++ctx->frame;
 	}
 }
 
