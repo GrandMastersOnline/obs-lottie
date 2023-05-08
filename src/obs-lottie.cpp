@@ -94,7 +94,6 @@ static void lottie_source_open(struct lottie_source *s)
 		s->buffer.data(), s->width, s->height, s->width * 4));
 }
 
-
 static void lottie_source_start(struct lottie_source *s)
 {
 	if (!s->animation) {
@@ -113,10 +112,10 @@ static void lottie_source_update(void *data, obs_data_t *settings)
 {
 	lottie_source *ctx = (lottie_source *)data;
 
-	ctx->file = obs_data_get_string(settings, "file");;
+	ctx->file = obs_data_get_string(settings, "file");
 	ctx->keepAspectRatio = obs_data_get_bool(settings, "keepAspectRatio");
-	ctx->width = obs_data_get_int(settings, "width");;
-	ctx->height = obs_data_get_int(settings, "height");;
+	ctx->width = obs_data_get_int(settings, "width");
+	ctx->height = obs_data_get_int(settings, "height");
 
 	ctx->is_looping = obs_data_get_bool(settings, "looping");
 	ctx->restart_on_activate =
