@@ -42,6 +42,7 @@ static obs_properties_t *lottie_source_properties(void *data)
 	UNUSED_PARAMETER(data);
 
 	obs_properties_t *properties = obs_properties_create();
+	obs_properties_set_flags(properties, OBS_PROPERTIES_DEFER_UPDATE);
 
 	obs_properties_add_path(properties, "file", obs_module_text("File"),
 				OBS_PATH_FILE, lottie_filter, NULL);
