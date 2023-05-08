@@ -13,14 +13,16 @@ struct lottie_source {
 	size_t width = 0;
 	size_t height = 0;
 	size_t frame = 0;
+	size_t frames = 0;
 	bool keepAspectRatio = true;
 	bool is_looping = false;
 	bool is_clear_on_media_end = true;
 	bool restart_on_activate = true;
 
-	bool active = false;
+	enum obs_media_state state = OBS_MEDIA_STATE_NONE;
 	std::vector<uint32_t> buffer;
 	std::unique_ptr<rlottie::Animation> animation;
+	std::unique_ptr<rlottie::Surface> surface;
 
 	lottie_source(obs_source_t *source) : source(source) {}
 };
@@ -72,55 +74,61 @@ static void lottie_source_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "restart_on_activate", true);
 }
 
+static void lottie_source_open(struct lottie_source *s)
+{
+	if (s->file.empty()) {
+		return;
+	}
+
+	s->animation = rlottie::Animation::loadFromFile(s->file);
+	s->frame = 0;
+	s->frames = s->animation->totalFrame();
+	s->state = OBS_MEDIA_STATE_NONE;
+
+	if (!s->width && !s->height) {
+		s->animation->size(s->width, s->height);
+	}
+
+	s->buffer.resize(s->width * s->height * 4);
+	s->surface = std::unique_ptr<rlottie::Surface>(new rlottie::Surface(
+		s->buffer.data(), s->width, s->height, s->width * 4));
+}
+
+
+static void lottie_source_start(struct lottie_source *s)
+{
+	if (!s->animation) {
+		lottie_source_open(s);
+	}
+
+	if (!s->animation) {
+		return;
+	}
+
+	s->state = OBS_MEDIA_STATE_PLAYING;
+	obs_source_media_started(s->source);
+}
+
 static void lottie_source_update(void *data, obs_data_t *settings)
 {
 	lottie_source *ctx = (lottie_source *)data;
 
-	const char *file = obs_data_get_string(settings, "file");
-	size_t width = obs_data_get_int(settings, "width");
-	size_t height = obs_data_get_int(settings, "height");
-
-	if (ctx->file.compare(file)) {
-		ctx->file = file;
-		ctx->animation = rlottie::Animation::loadFromFile(file);
-		ctx->frame = 0;
-
-		width = 0;
-		height = 0;
-	}
-
-	if (!ctx->animation) {
-		return;
-	}
-
-	ctx->animation->size(ctx->width, ctx->height);
-
-	if (width) {
-		ctx->width = width;
-	} else {
-		obs_data_set_int(settings, "width", ctx->width);
-	}
-
-	if (height) {
-		ctx->height = height;
-	} else {
-		obs_data_set_int(settings, "height", ctx->height);
-	}
-
+	ctx->file = obs_data_get_string(settings, "file");;
 	ctx->keepAspectRatio = obs_data_get_bool(settings, "keepAspectRatio");
-
-	ctx->buffer.resize(ctx->width * ctx->height * 4);
-
-	if (!width || !height) {
-		obs_source_update_properties(ctx->source);
-	}
+	ctx->width = obs_data_get_int(settings, "width");;
+	ctx->height = obs_data_get_int(settings, "height");;
 
 	ctx->is_looping = obs_data_get_bool(settings, "looping");
 	ctx->restart_on_activate =
 		obs_data_get_bool(settings, "restart_on_activate");
 	ctx->is_clear_on_media_end =
 		obs_data_get_bool(settings, "clear_on_media_end");
-	ctx->active = true;
+
+	bool active = obs_source_active(ctx->source);
+
+	if (!ctx->restart_on_activate || active) {
+		lottie_source_start(ctx);
+	}
 }
 
 static void lottie_source_activate(void *data)
@@ -128,8 +136,19 @@ static void lottie_source_activate(void *data)
 	lottie_source *ctx = (lottie_source *)data;
 
 	if (ctx->restart_on_activate) {
-		ctx->frame = 0;
-		ctx->active = true;
+		obs_source_media_restart(ctx->source);
+	}
+}
+
+static void lottie_source_deactivate(void *data)
+{
+	lottie_source *ctx = (lottie_source *)data;
+
+	if (ctx->restart_on_activate) {
+		if (ctx->animation) {
+			ctx->state = OBS_MEDIA_STATE_ENDED;
+			obs_source_media_ended(ctx->source);
+		}
 	}
 }
 
@@ -163,32 +182,44 @@ static uint32_t lottie_source_getheight(void *data)
 	return ctx->height;
 }
 
+static void lottie_source_frame(lottie_source *s)
+{
+	s->animation->renderSync(s->frame, *s->surface.get(),
+				 s->keepAspectRatio);
+}
+
 static void lottie_source_video_tick(void *data, float seconds)
 {
 	UNUSED_PARAMETER(seconds);
 
 	lottie_source *ctx = (lottie_source *)data;
 
-	if (!ctx->animation || !ctx->active) {
+	if (!ctx->animation) {
 		return;
 	}
 
-	if (obs_source_showing(ctx->source)) {
-		rlottie::Surface surface(ctx->buffer.data(), ctx->width,
-					 ctx->height, ctx->width * 4);
-
-		ctx->animation->renderSync(ctx->frame, surface,
-					   ctx->keepAspectRatio);
+	if (ctx->state == OBS_MEDIA_STATE_STOPPED) {
+		ctx->state = OBS_MEDIA_STATE_ENDED;
+		obs_source_media_ended(ctx->source);
 	}
 
-	if (ctx->frame == ctx->animation->totalFrame()) {
+	if (ctx->state != OBS_MEDIA_STATE_PLAYING) {
+		return;
+	}
+
+	if (ctx->frame > ctx->frames) {
+
+		ctx->state = OBS_MEDIA_STATE_ENDED;
+		obs_source_media_ended(ctx->source);
+		return;
+	}
+
+	lottie_source_frame(ctx);
+
+	if (ctx->frame++ == ctx->frames) {
 		if (ctx->is_looping) {
 			ctx->frame = 0;
-		} else if (ctx->is_clear_on_media_end) {
-			ctx->active = false;
 		}
-	} else {
-		++ctx->frame;
 	}
 }
 
@@ -198,7 +229,19 @@ static void lottie_source_render(void *data, gs_effect_t *effect)
 
 	lottie_source *ctx = (lottie_source *)data;
 
-	if (!ctx->animation || !ctx->active) {
+	if (!ctx->animation) {
+		return;
+	}
+
+	if (!obs_source_active(ctx->source)) {
+		return;
+	}
+
+	if (ctx->state == OBS_MEDIA_STATE_STOPPED) {
+		return;
+	}
+
+	if (ctx->state == OBS_MEDIA_STATE_ENDED && ctx->is_clear_on_media_end) {
 		return;
 	}
 
@@ -214,10 +257,99 @@ static void lottie_source_render(void *data, gs_effect_t *effect)
 	gs_texture_destroy(texture);
 }
 
+static void lottie_source_play_pause(void *data, bool pause)
+{
+	lottie_source *ctx = (lottie_source *)data;
+
+	if (pause) {
+		ctx->state = OBS_MEDIA_STATE_PAUSED;
+	} else {
+		ctx->state = OBS_MEDIA_STATE_PLAYING;
+		obs_source_media_started(ctx->source);
+	}
+}
+
+static void lottie_source_restart(void *data)
+{
+	lottie_source *ctx = (lottie_source *)data;
+
+	ctx->frame = 0;
+
+	if (obs_source_showing(ctx->source)) {
+		lottie_source_start(ctx);
+	}
+
+	ctx->state = OBS_MEDIA_STATE_PLAYING;
+}
+
+static void lottie_source_stop(void *data)
+{
+	lottie_source *ctx = (lottie_source *)data;
+
+	ctx->state = OBS_MEDIA_STATE_STOPPED;
+}
+
+static void lottie_source_next(void *data)
+{
+	lottie_source *ctx = (lottie_source *)data;
+
+	ctx->frame = ctx->frames;
+
+	lottie_source_frame(ctx);
+}
+
+static void lottie_source_previous(void *data)
+{
+	lottie_source *ctx = (lottie_source *)data;
+
+	ctx->frame = 0;
+
+	lottie_source_frame(ctx);
+}
+
+static enum obs_media_state lottie_source_get_state(void *data)
+{
+	lottie_source *ctx = (lottie_source *)data;
+
+	return ctx->state;
+}
+
+static int64_t lottie_source_get_duration(void *data)
+{
+	lottie_source *ctx = (lottie_source *)data;
+
+	if (!ctx->animation) {
+		return 0;
+	}
+
+	return ctx->animation->duration() * 1000;
+}
+
+static int64_t lottie_source_get_time(void *data)
+{
+	lottie_source *ctx = (lottie_source *)data;
+
+	if (!ctx->animation) {
+		return 0;
+	}
+
+	return ctx->frame / ctx->animation->frameRate() * 1000;
+}
+
+static void lottie_source_set_time(void *data, int64_t ms)
+{
+	lottie_source *ctx = (lottie_source *)data;
+
+	ctx->frame = ctx->animation->frameAtPos(ms / 1000.0 /
+						ctx->animation->duration());
+
+	lottie_source_frame(ctx);
+}
+
 static struct obs_source_info lottie_source_info = {
 	.id = "lottie_source",
 	.type = OBS_SOURCE_TYPE_INPUT,
-	.output_flags = OBS_SOURCE_VIDEO,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CONTROLLABLE_MEDIA,
 	.get_name = lottie_source_get_name,
 	.create = lottie_source_create,
 	.destroy = lottie_source_destroy,
@@ -230,6 +362,15 @@ static struct obs_source_info lottie_source_info = {
 	.video_tick = lottie_source_video_tick,
 	.video_render = lottie_source_render,
 	.icon_type = OBS_ICON_TYPE_MEDIA,
+	.media_play_pause = lottie_source_play_pause,
+	.media_restart = lottie_source_restart,
+	.media_stop = lottie_source_stop,
+	.media_next = lottie_source_next,
+	.media_previous = lottie_source_previous,
+	.media_get_duration = lottie_source_get_duration,
+	.media_get_time = lottie_source_get_time,
+	.media_set_time = lottie_source_set_time,
+	.media_get_state = lottie_source_get_state,
 };
 
 bool obs_module_load(void)
