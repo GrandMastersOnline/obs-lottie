@@ -126,6 +126,10 @@ static void lottie_source_update(void *data, obs_data_t *settings)
 
 	bool active = obs_source_active(ctx->source);
 
+	if (active) {
+		lottie_source_open(ctx);
+	}
+
 	if (!ctx->restart_on_activate || active) {
 		lottie_source_start(ctx);
 	}
@@ -195,6 +199,10 @@ static void lottie_source_video_tick(void *data, float seconds)
 	lottie_source *ctx = (lottie_source *)data;
 
 	if (!ctx->animation) {
+		lottie_source_open(ctx);
+	}
+
+	if (!ctx->animation) {
 		return;
 	}
 
@@ -260,6 +268,14 @@ static void lottie_source_render(void *data, gs_effect_t *effect)
 static void lottie_source_play_pause(void *data, bool pause)
 {
 	lottie_source *ctx = (lottie_source *)data;
+
+	if (!ctx->animation) {
+		lottie_source_open(ctx);
+	}
+
+	if (!ctx->animation) {
+		return;
+	}
 
 	if (pause) {
 		ctx->state = OBS_MEDIA_STATE_PAUSED;
